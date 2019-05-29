@@ -16,8 +16,8 @@ def evaluation(x, y):
 def aiwf(scores, W, SWARM_SIZE):
     for s in range(SWARM_SIZE):
         if scores[s] <= np.mean(scores):
-            W[s] = np.min(W) + (((np.max(W) - np.min(W)) * (scores[s] - np.min(scores))) / 
-                    (np.mean(scores) - np.min(scores)))
+            W[s] = (np.min(W) + (((np.max(W) - np.min(W)) * (scores[s] - np.min(scores))) / 
+                    (np.mean(scores) - np.min(scores))))
         else:
             W[s] = np.max(W)
     return W
@@ -68,7 +68,7 @@ def main():
     C2 = 0.81 # 加速係数
     W = [] # 慣性係数パラメータ
     for s in range(SWARM_SIZE):
-        W.append(0.9)
+        W.append(random.uniform(0.0, 1.0))
     
     # 最小値，最大値設定
     x_min, x_max = -5, 5
@@ -95,7 +95,6 @@ def main():
         #AIWF
         if AIWF == True:
             W = aiwf(personal_best_scores, W, SWARM_SIZE)
-            print(str(W[5]) + " ", end="")
 
         for s in range(SWARM_SIZE):
             # 変更前の情報の代入
@@ -122,8 +121,11 @@ def main():
 
 
         # Visualization
-        #if i == 0 or i == 9 or i == 19 or i == 29:
-        #    visualization(personal_best_positions, SWARM_SIZE)
+        if i == 0 or i == 9 or i == 19 or i == 29:
+            print("ITERATION = " + str(i+1))
+            print(W)
+            print("")
+            visualization(personal_best_positions, SWARM_SIZE)
     
     # Optimal solution
     print("Best Position:", best_position)
