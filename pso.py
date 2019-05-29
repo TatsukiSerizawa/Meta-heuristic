@@ -5,10 +5,22 @@ import random
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+AIWF = True # AIWFを使うか
+
+
 # 評価関数(z = x^2+y^2)
 def evaluation(x, y):
     #return x**2 + y**2 # Sphere function
     return (1.0 - x)**2 + 100 * (y - x**2)**2
+
+def aiwf(scores, W, SWARM_SIZE):
+    for s in range(SWARM_SIZE):
+        if scores[s] <= np.mean(scores):
+            W[s] = np.min(W) + (((np.max(W) - np.min(W)) * (scores[s] - np.min(scores))) / 
+                    (np.mean(scores) - np.min(scores)))
+        else:
+            W[s] = np.max(W)
+    return W
 
 # 粒子の位置更新関数
 def update_position(x, y, vx, vy):
@@ -17,13 +29,13 @@ def update_position(x, y, vx, vy):
     return new_x, new_y
 
 # 粒子の速度更新関数
-def update_velocity(x, y, vx, vy, p, g, W, C1, C2):
+def update_velocity(x, y, vx, vy, p, g, w, c1, c2):
     #random parameter (0~1)
     r1 = random.random()
     r2 = random.random()
     # 速度更新
-    new_vx = W * vx + C1 * (g["x"] - x) * r1 + C2 * (p["x"] - x)
-    new_vy = W * vy + C1 * (g["y"] - y) * r1 + C2 * (p["y"] - y)
+    new_vx = w * vx + c1 * (g["x"] - x) * r1 + c2 * (p["x"] - x)
+    new_vy = w * vy + c1 * (g["y"] - y) * r1 + c2 * (p["y"] - y)
     return new_vx, new_vy
 
 # 可視化
@@ -52,9 +64,11 @@ def visualization(positions, SWARM_SIZE):
 def main():
     SWARM_SIZE = 100 # 粒子数
     ITERATION = 30 # ループ回数
-    W = 0.5 # 慣性係数パラメータ
     C1 = 0.84 # 加速係数
     C2 = 0.81 # 加速係数
+    W = [] # 慣性係数パラメータ
+    for s in range(SWARM_SIZE):
+        W.append(0.9)
     
     # 最小値，最大値設定
     x_min, x_max = -5, 5
@@ -78,6 +92,11 @@ def main():
 
     # ループ回数分Particle移動
     for i in range(ITERATION):
+        #AIWF
+        if AIWF == True:
+            W = aiwf(personal_best_scores, W, SWARM_SIZE)
+            print(str(W[5]) + " ", end="")
+
         for s in range(SWARM_SIZE):
             # 変更前の情報の代入
             x, y = position[s]["x"], position[s]["y"]
@@ -88,7 +107,7 @@ def main():
             new_x, new_y = update_position(x, y, vx, vy)
             position[s] = {"x": new_x, "y": new_y}
             # 粒子の速度更新
-            new_vx, new_vy = update_velocity(new_x, new_y, vx, vy, p, best_position, W, C1, C2)
+            new_vx, new_vy = update_velocity(new_x, new_y, vx, vy, p, best_position, W[s], C1, C2)
             velocity[s] = {"x": new_vx, "y": new_vy}
 
             # 評価値を求める
@@ -101,9 +120,10 @@ def main():
         best_particle = np.argmin(personal_best_scores)
         best_position = personal_best_positions[best_particle]
 
+
         # Visualization
-        if i == 0 or i == 9 or i == 19 or i == 29:
-            visualization(personal_best_positions, SWARM_SIZE)
+        #if i == 0 or i == 9 or i == 19 or i == 29:
+        #    visualization(personal_best_positions, SWARM_SIZE)
     
     # Optimal solution
     print("Best Position:", best_position)
