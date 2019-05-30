@@ -4,6 +4,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import time
 
 AIWF = True # AIWFを使うか
 
@@ -34,8 +35,8 @@ def update_velocity(x, y, vx, vy, p, g, w, c1, c2):
     r1 = random.random()
     r2 = random.random()
     # 速度更新
-    new_vx = w * vx + c1 * (g["x"] - x) * r1 + c2 * (p["x"] - x)
-    new_vy = w * vy + c1 * (g["y"] - y) * r1 + c2 * (p["y"] - y)
+    new_vx = w * vx + c1 * (g["x"] - x) * r1 + c2 * (p["x"] - x) * r2
+    new_vy = w * vy + c1 * (g["y"] - y) * r1 + c2 * (p["y"] - y) * r2
     return new_vx, new_vy
 
 # 可視化
@@ -69,6 +70,9 @@ def main():
     W = [] # 慣性係数パラメータ
     for s in range(SWARM_SIZE):
         W.append(random.uniform(0.0, 1.0))
+    
+    # 時間計測開始
+    start = time.time()
     
     # 最小値，最大値設定
     x_min, x_max = -5, 5
@@ -121,15 +125,19 @@ def main():
 
 
         # Visualization
-        if i == 0 or i == 9 or i == 19 or i == 29:
-            print("ITERATION = " + str(i+1))
-            print(W)
-            print("")
-            visualization(personal_best_positions, SWARM_SIZE)
+        #if i == 0 or i == 9 or i == 19 or i == 29:
+        #    print("ITERATION = " + str(i+1))
+        #    print(W)
+        #    print("")
+        #    visualization(personal_best_positions, SWARM_SIZE)
     
+    # 時間計測終了
+    process_time = time.time() - start
+
     # Optimal solution
     print("Best Position:", best_position)
     print("Score:", min(personal_best_scores))
+    print("time:", process_time)
     # print("Best Particle:", best_particle)
 
 if __name__ == '__main__':
