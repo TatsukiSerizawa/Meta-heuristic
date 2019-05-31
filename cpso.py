@@ -18,7 +18,7 @@ def evaluation(x, y):
     #return (1.0 - x)**2 + 100 * (y - x**2)**2
 
 # PSO
-def pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position):
+def pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y):
     # ループ回数分Particle移動
     for i in range(ITERATION):
         #AIWF
@@ -32,7 +32,7 @@ def pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scor
             p = personal_best_positions[s]
             
             # 粒子の位置更新
-            new_x, new_y = update_position(x, y, vx, vy)
+            new_x, new_y = update_position(x, y, vx, vy, search_space_x, search_space_y)
             position[s] = {"x": new_x, "y": new_y}
             # 粒子の速度更新
             new_vx, new_vy = update_velocity(new_x, new_y, vx, vy, p, best_position, W[s], C1, C2)
@@ -68,9 +68,14 @@ def aiwf(scores, W, SWARM_SIZE):
     return W
 
 # 粒子の位置更新関数
-def update_position(x, y, vx, vy):
+def update_position(x, y, vx, vy, search_space_x, search_space_y):
     new_x = x + vx
     new_y = y + vy
+    # 探索範囲内か確認
+    if new_x < search_space_x["min"] or new_y < search_space_y["min"]:
+        new_x, new_y = search_space_x["min"], search_space_y["min"]
+    elif new_x > search_space_x["max"] or new_y > search_space_y["max"]:
+        new_x, new_y = search_space_x["max"], search_space_y["max"]
     return new_x, new_y
 
 # 粒子の速度更新関数
@@ -109,7 +114,6 @@ def visualization(positions, SWARM_SIZE):
 def cls(top_scores, top_positions):
     cx = []
     cy = []
-    chaotic_positions = []
 
     min_x, min_y = min(top["x"] for top in top_positions), min(top["y"] for top in top_positions)
     max_x, max_y = max(top["x"] for top in top_positions), max(top["y"] for top in top_positions)
@@ -121,16 +125,18 @@ def cls(top_scores, top_positions):
     for i in range(K):
         logistic_x = []
         logistic_y = []
+        chaotic_scores = []
+        chaotic_positions = []
         for j in range(len(top_scores)):
             logistic_x.append(4 * cx[j] * (1 - cx[j]))
             logistic_y.append(4 * cy[j] * (1 - cy[j]))
-        # 位置の更新
-        chaotic_x, chaotic_y = chaotic_update_position(logistic_x, logistic_y, min_x, min_y, max_x, max_y)
-        chaotic_positions = {"x": chaotic_x, "y": chaotic_y}
-        # score評価
-        chaotic_scores = evaluation(chaotic_x, chaotic_y)
+            # 位置の更新
+            chaotic_x, chaotic_y = chaotic_update_position(logistic_x[j], logistic_y[j], min_x, min_y, max_x, max_y)
+            chaotic_positions.append({"x": chaotic_x, "y": chaotic_y})
+            # score評価
+            chaotic_scores.append(evaluation(chaotic_x, chaotic_y))
         # 新しいscoreが前より優れていれば値を返し，それ以外はcx, cyを更新して繰り返す
-        if np.all(chaotic_scores < top_scores):
+        if min(chaotic_scores) < min(top_scores):
             return chaotic_scores, chaotic_positions
         cx = logistic_x
         cy = logistic_y
@@ -138,19 +144,17 @@ def cls(top_scores, top_positions):
 
 # Chaotic position更新
 def chaotic_update_position(x, y, min_x, min_y, max_x, max_y):
-    new_x = []
-    new_y = []
-    for i in range(len(x)):
-        new_x = min_x + x[i] * (max_x - min_x)
-        new_y = min_y + y[i] * (max_y - min_y)
+    new_x = min_x + x * (max_x - min_x)
+    new_y = min_y + y * (max_y - min_y)
     return new_x, new_y
 
 # 探索範囲縮小
 def search_space_reduction(top_positions):
     min_x, min_y = min(top["x"] for top in top_positions), min(top["y"] for top in top_positions)
     max_x, max_y = max(top["x"] for top in top_positions), max(top["y"] for top in top_positions)
-    x = top_positions["x"]
-    y = top_positions["y"]
+    x = (top["x"] for top in top_positions)
+    y = (top["y"] for top in top_positions)
+    print(x)
     
     for i in range(len(top_positions)):
         tmp_min_x = x[i] - R * (max_x - min_x)
@@ -166,10 +170,9 @@ def search_space_reduction(top_positions):
     return search_space_x, search_space_y
 
 
-def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position):
-    search_space_x = {"min": MIN, "max": MAX}
+def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y):
     # PSO
-    pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position)
+    pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y)
 
     # 上位1/5を取り出す
     tmp = []
@@ -182,7 +185,9 @@ def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scor
         top_positions.append(personal_best_positions[n])
 
     # CLS
+    print(min(top_scores))
     top_scores, top_positions = cls(top_scores, top_positions)
+    print(min(top_scores))
     #探索範囲縮小
     search_space_x, search_space_y = search_space_reduction(top_positions)
 
@@ -200,11 +205,11 @@ def main():
         for s in range(SWARM_SIZE):
             W.append(0.9)
     
-    
+
     # 時間計測開始
     start = time.time()
 
-    # 各粒子の初期位置, 速度, personal best, global best 設定
+    # 各粒子の初期位置, 速度, personal best, global best 及び探索範囲設定
     position = []
     velocity = []
     personal_best_scores = []
@@ -216,11 +221,13 @@ def main():
     personal_best_positions = list(position)
     for p in position:
         personal_best_scores.append(evaluation(p["x"], p["y"]))
-    #global best
+    # global best
     best_particle = np.argmin(personal_best_scores)
     best_position = personal_best_positions[best_particle]
+    # search space
+    search_space_x, search_space_y = {'min': MIN_X, "max": MAX_X}, {"min": MIN_Y, "max": MAX_Y}
 
-    run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position)
+    run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y)
 
     # 時間計測終了
     process_time = time.time() - start

@@ -21,8 +21,7 @@ print(ps)
 print(test)
 '''
 
-a = [0.5, 0.3, 0.8]
-b = [0.4, 0,2, 0.6]
 
-if a < b:
-    print("a < b")
+search_space_x, search_space_y = {'min': 2.0, "max": 6.0}, {"min": 1.0, "max": 5.0}
+
+print(search_space_x["min"])
