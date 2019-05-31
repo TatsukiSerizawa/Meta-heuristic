@@ -169,8 +169,9 @@ def search_space_reduction(top_positions):
         max_x.append(x[i] + R * (max_x[0] - min_x[0]))
         max_y.append(y[i] + R * (max_y[0] - min_y[0]))
     
-    new_min_x, new_min_y = max(min_x), max(min_y)
-    new_max_x, new_max_y = min(max_x), min(max_y)
+    # 論文通り new_min_x = max(min_x) などにすると最小値と最大値が逆転してしまうので，修正
+    new_min_x, new_min_y = min(min_x), min(min_y)
+    new_max_x, new_max_y = max(max_x), max(max_y)
     search_space_x = {"min": new_min_x, "max": new_max_x}
     search_space_y = {"min": new_min_y, "max": new_max_y}
 
@@ -192,11 +193,17 @@ def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scor
         top_positions.append(personal_best_positions[n])
 
     # CLS
-    print(min(top_scores))
+    print("before: " + str(min(top_scores)))
     top_scores, top_positions = cls(top_scores, top_positions)
-    print(min(top_scores))
+    print("after: " + str(min(top_scores)))
     #探索範囲縮小
+    print("before")
+    print("x: " + str(search_space_x))
+    print("y: " + str(search_space_y))
     search_space_x, search_space_y = search_space_reduction(top_positions)
+    print("after")
+    print("x: " + str(search_space_x))
+    print("y: " + str(search_space_y))
 
 
 def main():
