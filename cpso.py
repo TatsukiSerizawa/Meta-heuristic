@@ -7,6 +7,12 @@ from mpl_toolkits.mplot3d import Axes3D
 import time
 
 AIWF = True # AIWFを使うか
+
+SCORE = 1.000e-15 # CPSOの停止条件SCORE閾値
+CPSO_LOOP = 10 # CPSOの停止条件回数
+SWARM_SIZE = 100 # 粒子数
+ITERATION = 30 # PSOループ回数
+C1 = C2 = 2.0 # 加速係数
 K = 100 # CLSでの最大反復数
 R = 0.25 # 探索範囲縮小関数におけるパラメータ
 MIN_X, MIN_Y = -5.0, -5.0 # 探索開始時の範囲最小値
@@ -18,12 +24,12 @@ def evaluation(x, y):
     #return (1.0 - x)**2 + 100 * (y - x**2)**2
 
 # PSO
-def pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y):
+def pso(W, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y):
     # ループ回数分Particle移動
     for i in range(ITERATION):
         #AIWF
         if AIWF == True:
-            W = aiwf(personal_best_scores, W, SWARM_SIZE)
+            W = aiwf(personal_best_scores, W)
 
         for s in range(SWARM_SIZE):
             # 変更前の情報の代入
@@ -35,7 +41,7 @@ def pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scor
             new_x, new_y = update_position(x, y, vx, vy, search_space_x, search_space_y)
             position[s] = {"x": new_x, "y": new_y}
             # 粒子の速度更新
-            new_vx, new_vy = update_velocity(new_x, new_y, vx, vy, p, best_position, W[s], C1, C2)
+            new_vx, new_vy = update_velocity(new_x, new_y, vx, vy, p, best_position, W[s])
             velocity[s] = {"x": new_vx, "y": new_vy}
 
             # 評価値を求める
@@ -54,11 +60,11 @@ def pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scor
             print("ITERATION = " + str(i+1))
             print(W)
             print("")
-            visualization(personal_best_positions, SWARM_SIZE)
+            visualization(personal_best_positions)
         '''
 
 # Adaptive Inertia Weight Factor (AIWF) 関数
-def aiwf(scores, W, SWARM_SIZE):
+def aiwf(scores, W):
     for s in range(SWARM_SIZE):
         if scores[s] <= np.mean(scores):
             W[s] = (np.min(W) + (((np.max(W) - np.min(W)) * (scores[s] - np.min(scores))) / 
@@ -79,17 +85,17 @@ def update_position(x, y, vx, vy, search_space_x, search_space_y):
     return new_x, new_y
 
 # 粒子の速度更新関数
-def update_velocity(x, y, vx, vy, p, g, w, c1, c2):
+def update_velocity(x, y, vx, vy, p, g, w):
     #random parameter (0~1)
     r1 = random.random()
     r2 = random.random()
     # 速度更新
-    new_vx = w * vx + c1 * (g["x"] - x) * r1 + c2 * (p["x"] - x) * r2
-    new_vy = w * vy + c1 * (g["y"] - y) * r1 + c2 * (p["y"] - y) * r2
+    new_vx = w * vx + C1 * (g["x"] - x) * r1 + C2 * (p["x"] - x) * r2
+    new_vy = w * vy + C1 * (g["y"] - y) * r1 + C2 * (p["y"] - y) * r2
     return new_vx, new_vy
 
 # 可視化関数
-def visualization(positions, SWARM_SIZE):
+def visualization(positions):
     fig = plt.figure()
     ax = Axes3D(fig)
     # Mesh
@@ -178,7 +184,7 @@ def search_space_reduction(top_positions):
     return search_space_x, search_space_y
 
 # Particleを新しい探索範囲内で再生成
-def re_generation_particle(SWARM_SIZE, W, N, velocity, top_positions, search_space_x, search_space_y):
+def re_generation_particle(W, N, velocity, top_positions, search_space_x, search_space_y):
     new_position = top_positions
     new_velocity = []
     new_W = []
@@ -193,43 +199,71 @@ def re_generation_particle(SWARM_SIZE, W, N, velocity, top_positions, search_spa
         new_W.append(random.uniform(0.4, 0.9))
     return new_position, new_velocity, new_W
 
+# 再評価
+def re_evaluation(position, personal_best_scores, personal_best_positions, best_position):
+    for s in range(SWARM_SIZE):
+        x, y = position[s]["x"], position[s]["y"]
+        # 評価値を求める
+        score = evaluation(x, y)
+        # update personal best
+        if score < personal_best_scores[s]:
+            personal_best_scores[s] = score
+            personal_best_positions[s] = {"x": x, "y": y}
+    # update global best
+    best_particle = np.argmin(personal_best_scores)
+    best_position = personal_best_positions[best_particle]
+    return personal_best_scores, personal_best_positions, best_position
 
-def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y):
-    # PSO
-    pso(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y)
 
-    # 上位1/5を取り出す
-    tmp = []
-    top_scores = []
-    top_positions = []
-    tmp = sorted(zip(personal_best_scores, personal_best_positions, velocity, W))
-    personal_best_scores, personal_best_positions, velocity, W = zip(*tmp)
-    for n in range(int(SWARM_SIZE/5)):
-        top_scores.append(personal_best_scores[n])
-        top_positions.append(personal_best_positions[n])
+def run(W, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y):
+    i = 0
+    while i < CPSO_LOOP:
+        print("CPSO: " + str(i+1))
+        # PSO
+        pso(W, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y)
 
-    # CLS
-    print("before: " + str(min(top_scores)))
-    top_scores, top_positions = cls(top_scores, top_positions)
-    print("after: " + str(min(top_scores)))
-    #探索範囲縮小
-    print("before")
-    print("x: " + str(search_space_x))
-    print("y: " + str(search_space_y))
-    search_space_x, search_space_y = search_space_reduction(top_positions)
-    print("after")
-    print("x: " + str(search_space_x))
-    print("y: " + str(search_space_y))
+        # 上位1/5を取り出す
+        tmp = []
+        top_scores = []
+        top_positions = []
+        tmp = sorted(zip(personal_best_scores, personal_best_positions, velocity, W), key=lambda x: x[0])
+        personal_best_scores, personal_best_positions, velocity, W = zip(*tmp)
+        personal_best_scores, personal_best_positions, velocity, W = list(personal_best_scores), list(personal_best_positions), list(velocity), list(W)
 
-    # 4/5のParticleを新しい探索範囲内で再生成
-    position, velocity, W = re_generation_particle(SWARM_SIZE, W, int(SWARM_SIZE - (SWARM_SIZE/5)), velocity, top_positions, search_space_x, search_space_y)
+        for n in range(int(SWARM_SIZE/5)):
+            top_scores.append(personal_best_scores[n])
+            top_positions.append(personal_best_positions[n])
+
+        # CLS
+        print("CLS")
+        print("before: " + str(min(top_scores)))
+        top_scores, top_positions = cls(top_scores, top_positions)
+        print("after: " + str(min(top_scores)))
+        #探索範囲縮小
+        print("探索範囲")
+        print("before")
+        print("x: " + str(search_space_x))
+        print("y: " + str(search_space_y))
+        search_space_x, search_space_y = search_space_reduction(top_positions)
+        print("after")
+        print("x: " + str(search_space_x))
+        print("y: " + str(search_space_y))
+
+        # 4/5のParticleを新しい探索範囲内で再生成して追加
+        position, velocity, W = re_generation_particle(W, int(SWARM_SIZE - (SWARM_SIZE/5)), velocity, top_positions, search_space_x, search_space_y)
+        # 再評価
+        personal_best_scores, personal_best_positions, best_position = re_evaluation(position, personal_best_scores, personal_best_positions, best_position)
+        # 再評価結果
+        print(min(personal_best_scores))
+        print("")
+        i += 1
+        # Best score が閾値を下回ったら停止
+        if min(personal_best_scores) < SCORE:
+            return best_position, personal_best_scores
+    return best_position, personal_best_scores
 
 
 def main():
-    SWARM_SIZE = 100 # 粒子数
-    ITERATION = 30 # ループ回数
-    C1 = 2.0 # 加速係数
-    C2 = 2.0 # 加速係数
     W = [] # 慣性係数パラメータ
     if AIWF == True:
         for s in range(SWARM_SIZE):
@@ -242,7 +276,7 @@ def main():
     # 時間計測開始
     start = time.time()
 
-    # 各粒子の初期位置, 速度, personal best, global best 及び探索範囲設定
+    # 各粒子の初期位置, 速度, personal best, global best 及びsearch space設定
     position = []
     velocity = []
     personal_best_scores = []
@@ -260,7 +294,9 @@ def main():
     # search space
     search_space_x, search_space_y = {'min': MIN_X, "max": MAX_X}, {"min": MIN_Y, "max": MAX_Y}
 
-    run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y)
+    # run
+    best_position, personal_best_scores = run(W, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y)
+
 
     # 時間計測終了
     process_time = time.time() - start
