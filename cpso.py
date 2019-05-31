@@ -137,6 +137,7 @@ def cls(top_scores, top_positions):
             chaotic_scores.append(evaluation(chaotic_x, chaotic_y))
         # 新しいscoreが前より優れていれば値を返し，それ以外はcx, cyを更新して繰り返す
         if min(chaotic_scores) < min(top_scores):
+            print("Better Chaotic Particle found")
             return chaotic_scores, chaotic_positions
         cx = logistic_x
         cy = logistic_y
@@ -150,20 +151,26 @@ def chaotic_update_position(x, y, min_x, min_y, max_x, max_y):
 
 # 探索範囲縮小
 def search_space_reduction(top_positions):
-    min_x, min_y = min(top["x"] for top in top_positions), min(top["y"] for top in top_positions)
-    max_x, max_y = max(top["x"] for top in top_positions), max(top["y"] for top in top_positions)
-    x = (top["x"] for top in top_positions)
-    y = (top["y"] for top in top_positions)
-    print(x)
+    min_x = []
+    min_y = []
+    max_x = []
+    max_y = []
+
+    min_x.append(min(top["x"] for top in top_positions))
+    min_y.append(min(top["y"] for top in top_positions))
+    max_x.append(max(top["x"] for top in top_positions))
+    max_y.append(max(top["y"] for top in top_positions))
+    x = [top.get("x") for top in top_positions]
+    y = [top.get("y") for top in top_positions]
     
     for i in range(len(top_positions)):
-        tmp_min_x = x[i] - R * (max_x - min_x)
-        tmp_min_y = y[i] - R * (max_y - min_y)
-        tmp_max_x = x[i] + R * (max_x - min_x)
-        tmp_max_y = y[i] + R * (max_y - min_y)
+        min_x.append(x[i] - R * (max_x[0] - min_x[0]))
+        min_y.append(y[i] - R * (max_y[0] - min_y[0]))
+        max_x.append(x[i] + R * (max_x[0] - min_x[0]))
+        max_y.append(y[i] + R * (max_y[0] - min_y[0]))
     
-    new_min_x, new_min_y = max(min_x, tmp_min_x), max(min_y, tmp_min_y)
-    new_max_x, new_max_y = min(max_x, tmp_max_x), min(max_y, tmp_max_y)
+    new_min_x, new_min_y = max(min_x), max(min_y)
+    new_max_x, new_max_y = min(max_x), min(max_y)
     search_space_x = {"min": new_min_x, "max": new_max_x}
     search_space_y = {"min": new_min_y, "max": new_max_y}
 
