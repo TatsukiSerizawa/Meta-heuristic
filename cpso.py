@@ -177,6 +177,22 @@ def search_space_reduction(top_positions):
 
     return search_space_x, search_space_y
 
+# Particleを新しい探索範囲内で再生成
+def re_generation_particle(SWARM_SIZE, W, N, velocity, top_positions, search_space_x, search_space_y):
+    new_position = top_positions
+    new_velocity = []
+    new_W = []
+    
+    for i in range(int(SWARM_SIZE/5)):
+        new_velocity.append(velocity[i])
+        new_W.append(W[i])
+    
+    for n in range(N):
+        new_position.append({"x": random.uniform(search_space_x["min"], search_space_x["max"]), "y": random.uniform(search_space_y["min"], search_space_y["max"])})
+        new_velocity.append({"x": random.uniform(0, 1), "y": random.uniform(0, 1)})
+        new_W.append(random.uniform(0.4, 0.9))
+    return new_position, new_velocity, new_W
+
 
 def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scores, personal_best_positions, best_position, search_space_x, search_space_y):
     # PSO
@@ -186,8 +202,8 @@ def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scor
     tmp = []
     top_scores = []
     top_positions = []
-    tmp = sorted(zip(personal_best_scores, personal_best_positions))
-    personal_best_scores, personal_best_positions = zip(*tmp)
+    tmp = sorted(zip(personal_best_scores, personal_best_positions, velocity, W))
+    personal_best_scores, personal_best_positions, velocity, W = zip(*tmp)
     for n in range(int(SWARM_SIZE/5)):
         top_scores.append(personal_best_scores[n])
         top_positions.append(personal_best_positions[n])
@@ -205,12 +221,15 @@ def run(ITERATION, SWARM_SIZE, W, C1, C2, position, velocity, personal_best_scor
     print("x: " + str(search_space_x))
     print("y: " + str(search_space_y))
 
+    # 4/5のParticleを新しい探索範囲内で再生成
+    position, velocity, W = re_generation_particle(SWARM_SIZE, W, int(SWARM_SIZE - (SWARM_SIZE/5)), velocity, top_positions, search_space_x, search_space_y)
+
 
 def main():
     SWARM_SIZE = 100 # 粒子数
     ITERATION = 30 # ループ回数
-    C1 = 1.49 # 加速係数
-    C2 = 1.49 # 加速係数
+    C1 = 2.0 # 加速係数
+    C2 = 2.0 # 加速係数
     W = [] # 慣性係数パラメータ
     if AIWF == True:
         for s in range(SWARM_SIZE):
@@ -230,7 +249,7 @@ def main():
     # 初期位置, 初期速度
     for s in range(SWARM_SIZE):
         position.append({"x": random.uniform(MIN_X, MAX_X), "y": random.uniform(MIN_Y, MAX_Y)})
-        velocity.append({"x": 0.0, "y": 0.0})  
+        velocity.append({"x": random.uniform(0, 1), "y": random.uniform(0, 1)})
     # personal best
     personal_best_positions = list(position)
     for p in position:
