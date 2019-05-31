@@ -100,18 +100,18 @@ def visualization(positions):
     fig = plt.figure()
     ax = Axes3D(fig)
     # Mesh
-    mesh_x = np.arange(-3.0, 3.0, 0.1)
-    mesh_y = np.arange(-3.0, 3.0, 0.1)
+    mesh_x = np.arange(-0.5, 0.5, 0.01)
+    mesh_y = np.arange(-0.5, 0.5, 0.01)
     mesh_X, mesh_Y = np.meshgrid(mesh_x, mesh_y)
     mesh_Z = evaluation(mesh_X, mesh_Y)
-    ax.plot_wireframe(mesh_X, mesh_Y, mesh_Z)
+    #ax.plot_wireframe(mesh_X, mesh_Y, mesh_Z)
     # Particle
     for j in range(SWARM_SIZE):
         z = evaluation(positions[j]["x"], positions[j]["y"])
         ax.scatter(positions[j]["x"], positions[j]["y"], z)
-    ax.set_xlim([-5.0, 5.0])
-    ax.set_ylim([-5.0, 5.0])
-    ax.set_zlim([-2.0, 15.0])
+    ax.set_xlim([-1.0e-4, 1.0e-4])
+    ax.set_ylim([-1.0e-4, 1.0e-4])
+    ax.set_zlim([-1.0e-4, 1.0e-4])
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("f(x, y)")
@@ -259,6 +259,11 @@ def run(W, position, velocity, personal_best_scores, personal_best_positions, be
             # 再評価結果
             print(min(personal_best_scores))
             print("")
+            
+            # Visualization
+            if i < 5:
+                visualization(personal_best_positions)
+            
             i += 1
             # Best score が閾値を下回ったら停止
             if min(personal_best_scores) < SCORE:
