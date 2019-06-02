@@ -100,8 +100,8 @@ def visualization(positions):
     fig = plt.figure()
     ax = Axes3D(fig)
     # Mesh
-    mesh_x = np.arange(-0.5, 0.5, 0.01)
-    mesh_y = np.arange(-0.5, 0.5, 0.01)
+    mesh_x = np.arange(-0.5e-3, 0.5e-3, 0.1e-4)
+    mesh_y = np.arange(-0.5e-3, 0.5e-3, 0.1e-4)
     mesh_X, mesh_Y = np.meshgrid(mesh_x, mesh_y)
     mesh_Z = evaluation(mesh_X, mesh_Y)
     #ax.plot_wireframe(mesh_X, mesh_Y, mesh_Z)
@@ -261,8 +261,8 @@ def run(W, position, velocity, personal_best_scores, personal_best_positions, be
             print("")
             
             # Visualization
-            if i < 5:
-                visualization(personal_best_positions)
+            #if i < 5:
+            #    visualization(personal_best_positions)
             
             i += 1
             # Best score が閾値を下回ったら停止
