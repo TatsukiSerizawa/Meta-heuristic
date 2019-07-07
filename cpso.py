@@ -55,7 +55,7 @@ def pso(W, position, velocity, personal_best_scores, personal_best_positions, be
         best_particle = np.argmin(personal_best_scores)
         best_position = personal_best_positions[best_particle]
 
-        # Visualization
+        # PSO Visualization
         '''
         if i == 0 or i == 1 or i == 2 or i == 3:
             print("ITERATION = " + str(i+1))
@@ -260,7 +260,7 @@ def run(W, position, velocity, personal_best_scores, personal_best_positions, be
             print(min(personal_best_scores))
             print("")
             
-            # Visualization
+            # CPSO Visualization
             #if i < 5:
             #    visualization(personal_best_positions)
             
