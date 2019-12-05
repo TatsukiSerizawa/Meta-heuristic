@@ -8,7 +8,7 @@ pso.py: Simple Particle Swarm Optimization Program
 
 ## Blog
 
--  [Chaotic PSO でベンチマーク関数を評価する](http://resweater.hatenablog.com/entry/2019/06/02/083146)
+-  [Chaotic PSO でベンチマーク関数を評価する]()
 
 - [粒子群最適化(PSO)のパラメータについて](https://qiita.com/sweater/items/926cc8228ada57309955)
 
